@@ -2,7 +2,7 @@
 
 Current version: **2.1**
 
-# FrontScript Tooltip Helper
+# FrontScript Assistant
 
 This browser extension enhances the eFront embedded FrontReport coding window by providing tooltips, autocomplete, a searchable reference panel, and snippet insertion for FrontScript keywords, functions, procedures, and macros. Works on any Chrome and Edge browsers.
 
@@ -44,11 +44,12 @@ This browser extension enhances the eFront embedded FrontReport coding window by
 
 ## Installation
 
-1. Download the zip file and unzip into a permanent location (will create a folder called FRONTSCRIPT_TOOLTIP — files must remain there).
-2. In your browser, click on "Manage Extensions" (or visit `chrome://extensions`).
-3. Enable "Developer Mode".
-4. Click "Load unpacked" and select the unzipped folder [FRONTSCRIPT_TOOLTIP].
-5. Reload your browser.
+1. Download the zip file
+2. In your browser, click on "Manage Extensions" (or visit `chrome://extensions`)
+3. Enable "Developer Mode"
+4. Drag the zip file anywhere on the page
+5. Restart your browser
+6. Relax...
 
 ## Usage
 
@@ -60,7 +61,7 @@ This browser extension enhances the eFront embedded FrontReport coding window by
 ## Feedback
 
 Have a suggestion or found a bug?
-Please [open an issue](https://github.com/robertpalazzini/FRONTSCRIPT_TOOLTIP/issues) or start a discussion!
+Please [open an issue](https://github.com/robertpalazzini/FRONTSCRIPT_ASSISTANT/issues) or start a discussion!
 
 STILL A WORK IN PROGRESS - Please add comments, issues and I'll try to fix ASAP.
 
