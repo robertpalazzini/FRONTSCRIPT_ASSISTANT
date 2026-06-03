@@ -198,7 +198,7 @@
     {
       "name": "SQLIMPORT",
       "description": "Imports external SQL query results into an eFront Report table.",
-      "example": "PROC SQLIMPORT CONNECTION=\"DB_CONN\" SQL=\"SELECT * FROM orders\" OUT=WORK.ORDERS;\nRUN;"
+      "example": "PROC SQLIMPORT CONNECTION=\"DB_CONN\" \nSQL=\"SELECT * FROM orders\" \nDATA=WORK.ORDERS;\nRUN;"
     },
     {
       "name": "SQLTABLE",

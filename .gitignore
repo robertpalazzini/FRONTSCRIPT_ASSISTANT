@@ -1,0 +1,5 @@
+# Claude Code scratch space (worktrees, session files)
+.claude/
+
+# macOS
+.DS_Store
