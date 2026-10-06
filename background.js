@@ -1,4 +1,4 @@
-// Background service worker for FrontScript Tooltip Helper v2.1
+// Background service worker for FrontScript Tooltip Helper v2.2
 
 // Open side panel when extension icon is clicked (with Alt/Option key)
 chrome.action.onClicked.addListener((tab) => {

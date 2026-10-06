@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FrontScript Tooltip Helper",
-  "version": "2.1",
+  "version": "2.2",
   "description": "IntelliSense tooltips, autocomplete, side panel reference, and snippet insertion for FrontScript.",
   "permissions": [
     "scripting",
