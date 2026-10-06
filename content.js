@@ -1,25 +1,42 @@
 (async function () {
   "use strict";
 
+  // ── Debug log ─────────────────────────────────────────────────
+  // Logs to console and forwards to page-script, which keeps the buffer.
+  // Dump from the page console with: copy(window.__fsLog.join("\n"))
+  const t0 = performance.now();
+  function log(msg, extra) {
+    const line = `+${Math.round(performance.now() - t0)}ms [content] ${msg}` +
+      (extra !== undefined ? ` ${extra}` : '');
+    console.log('[FS-Helper]', line);
+    window.postMessage({ source: '__FRONTSCRIPT_EXT', type: 'LOG', line }, '*');
+  }
+  log('content script start', location.href);
+  window.addEventListener('error', (e) => {
+    if (e.filename && e.filename.startsWith('chrome-extension://')) {
+      log('uncaught error', `${e.message} @ ${e.filename}:${e.lineno}`);
+    }
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    log('unhandled rejection', e.reason && (e.reason.stack || e.reason));
+  });
+
   // ── Wait for eFront CodeMirror editor ─────────────────────────
-  function waitForEfrontApp(timeout = 10000) {
+  // No timeout: eFront can take well over 10s to build the editor, and
+  // the editor may also open later via SPA navigation.
+  function waitForEfrontApp() {
     return new Promise((resolve) => {
-      const check = () => {
-        if (document.querySelector('.CodeMirror.cm-s-frontscript')) {
-          resolve(true);
-          return;
-        }
-        if ((timeout -= 100) <= 0) {
-          resolve(false);
-          return;
-        }
-        setTimeout(check, 100);
-      };
-      check();
+      const sel = '.CodeMirror.cm-s-frontscript';
+      if (document.querySelector(sel)) { resolve(true); return; }
+      const obs = new MutationObserver(() => {
+        if (document.querySelector(sel)) { obs.disconnect(); resolve(true); }
+      });
+      obs.observe(document.documentElement, { childList: true, subtree: true });
     });
   }
 
   const found = await waitForEfrontApp();
+  log('editor wait result', found);
   if (!found) return;
 
   // ── Tooltip enabled check ─────────────────────────────────────
@@ -42,10 +59,18 @@
     }
   });
 
+  log('tooltipEnabled', tooltipEnabled);
   if (!tooltipEnabled) return;
 
   // ── Load tooltip definitions ──────────────────────────────────
-  const rawData = await fetch(chrome.runtime.getURL('frontscript-tooltips.json')).then(r => r.json());
+  let rawData;
+  try {
+    rawData = await fetch(chrome.runtime.getURL('frontscript-tooltips.json')).then(r => r.json());
+  } catch (e) {
+    log('FAILED to load tooltip json', e && e.message);
+    return;
+  }
+  log('tooltip json loaded', Object.keys(rawData).length + ' categories');
   const tooltipData = {};
   const allKeywords = []; // sent to page-script for autocomplete
 
@@ -193,6 +218,7 @@
 
   // Send keyword data to page-script
   function sendKeywordsToPage() {
+    log('sending keywords', allKeywords.length);
     window.postMessage({
       source: '__FRONTSCRIPT_EXT',
       type: 'SET_KEYWORDS',
@@ -203,6 +229,7 @@
   // Page script signals it's ready
   window.addEventListener('message', (event) => {
     if (event.data?.source === '__FRONTSCRIPT_PAGE' && event.data?.type === 'PAGE_READY') {
+      log('PAGE_READY received');
       sendKeywordsToPage();
     }
   });

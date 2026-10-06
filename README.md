@@ -1,6 +1,6 @@
 ## Version
 
-Current version: **2.1**
+Current version: **2.2**
 
 # FrontScript Assistant
 
@@ -75,3 +75,13 @@ Developed by Robert Palazzini
 *Made for FrontScript developers working in eFront FrontReport environments.*
 
 This extension is provided "as is" without warranty of any kind. By downloading or using it, you agree that the author is not liable for any direct, indirect, incidental, or consequential damages arising from its use. Use at your own risk.
+
+## Changelog
+
+### v2.2
+- Fix: autocomplete and snippet insertion no longer stop working when eFront rebuilds the CodeMirror editor; the extension now rebinds to the live editor automatically.
+- Fix: no longer gives up if the eFront editor takes a long time to load (previously a 10s limit).
+- Added debug logging (`[FS-Helper]` in the page console). To export it, run `copy(window.__fsLog.join("\n"))` in the browser console on the eFront tab.
+
+### v2.1
+- Autocomplete / IntelliSense, searchable side panel, and snippet insertion. Edge compatibility fixes.

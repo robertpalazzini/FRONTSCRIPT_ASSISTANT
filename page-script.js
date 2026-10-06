@@ -13,22 +13,43 @@
   let acDropdown = null;
   let initialized = false;
 
+  // ── Debug log buffer ────────────────────────────────────────
+  // Dump from the page console with: copy(window.__fsLog.join("\n"))
+  const t0 = performance.now();
+  window.__fsLog = window.__fsLog || [];
+  function log(msg, extra) {
+    const line = `+${Math.round(performance.now() - t0)}ms [page] ${msg}` +
+      (extra !== undefined ? ` ${extra}` : '');
+    window.__fsLog.push(line);
+    if (window.__fsLog.length > 500) window.__fsLog.shift();
+    console.log('[FS-Helper]', line);
+  }
+  log('page-script start', location.href);
+
   // ── Get the CodeMirror instance ─────────────────────────────
   function getCodeMirrorInstance() {
     const el = document.querySelector(".CodeMirror.cm-s-frontscript");
     return el && el.CodeMirror;
   }
 
-  // ── Wait for CM then initialise ─────────────────────────────
-  function waitAndInit(timeout) {
-    if (initialized) return;
-    if (timeout <= 0) return;
-    cm = getCodeMirrorInstance();
-    if (cm) {
-      initAutocomplete();
-    } else {
-      setTimeout(() => waitAndInit(timeout - 200), 200);
-    }
+  // ── Keep bound to the live CodeMirror instance ──────────────
+  // eFront can rebuild the editor (SPA navigation, switching scripts), which
+  // leaves listeners attached to a dead instance. Re-check periodically and
+  // rebind whenever the live instance changes.
+  let watching = false;
+  function ensureBound() {
+    const live = getCodeMirrorInstance();
+    if (!live || live === cm) return;
+    log(cm ? "CodeMirror instance changed, rebinding" : "CodeMirror found, binding");
+    hideDropdown();
+    cm = live;
+    bindEditor(cm);
+  }
+  function startWatching() {
+    if (watching) return;
+    watching = true;
+    ensureBound();
+    setInterval(ensureBound, 1000);
   }
 
   // ── Listen for messages from content script ─────────────────
@@ -36,14 +57,22 @@
     // Only accept messages from our extension
     if (event.data?.source !== "__FRONTSCRIPT_EXT") return;
 
+    if (event.data.type === "LOG") {
+      window.__fsLog.push(event.data.line);
+      if (window.__fsLog.length > 500) window.__fsLog.shift();
+      return;
+    }
+
     if (event.data.type === "SET_KEYWORDS") {
+      log("SET_KEYWORDS received", (event.data.keywords || []).length);
       allKeywords = event.data.keywords || [];
-      waitAndInit(10000);
+      startWatching();
     }
 
     if (event.data.type === "INSERT_SNIPPET") {
       const code = event.data.code;
-      const editor = cm || getCodeMirrorInstance();
+      const editor = getCodeMirrorInstance();
+      if (!editor) log("INSERT_SNIPPET: no editor found");
       if (editor && code) {
         const cursor = editor.getCursor();
         editor.replaceRange(code + "\n", cursor);
@@ -56,15 +85,22 @@
   window.postMessage({ source: "__FRONTSCRIPT_PAGE", type: "PAGE_READY" }, "*");
 
   // ── Init autocomplete ───────────────────────────────────────
-  function initAutocomplete() {
-    if (initialized) return;
-    initialized = true;
+  function bindEditor(cm) {
+    // Create autocomplete dropdown once; it outlives editor instances
+    if (!initialized) {
+      initialized = true;
+      acDropdown = document.createElement("div");
+      acDropdown.className = "fs-autocomplete";
+      acDropdown.style.display = "none";
+      document.body.appendChild(acDropdown);
 
-    // Create autocomplete dropdown
-    acDropdown = document.createElement("div");
-    acDropdown.className = "fs-autocomplete";
-    acDropdown.style.display = "none";
-    document.body.appendChild(acDropdown);
+      // Mouse click on item
+      acDropdown.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // keep editor focus
+        const el = e.target.closest(".fs-ac-item");
+        if (el) acceptItem(parseInt(el.dataset.index));
+      });
+    }
 
     // On text input
     cm.on("inputRead", (instance, changeObj) => {
@@ -104,13 +140,6 @@
 
     cm.on("blur", () => hideDropdown());
     cm.on("scroll", () => hideDropdown());
-
-    // Mouse click on item
-    acDropdown.addEventListener("mousedown", (e) => {
-      e.preventDefault(); // keep editor focus
-      const el = e.target.closest(".fs-ac-item");
-      if (el) acceptItem(parseInt(el.dataset.index));
-    });
   }
 
   // ── Autocomplete logic ──────────────────────────────────────
